@@ -82,6 +82,7 @@ type Options struct {
 	AppChannelAddress             string
 	Logger                        logger.Options
 	Metrics                       *metrics.FlagOptions
+	ConsulAddr                    string
 }
 
 func New(origArgs []string) (*Options, error) {
@@ -171,6 +172,7 @@ func New(origArgs []string) (*Options, error) {
 	fs.StringSliceVar(&opts.SchedulerAddress, "scheduler-host-address", nil, "Addresses of the Scheduler service instance(s), as comma separated host:port pairs")
 	fs.StringVar(&opts.ActorsService, "actors-service", "", "Type and address of the actors service, in the format 'type:address'")
 	fs.StringVar(&opts.RemindersService, "reminders-service", "", "Type and address of the reminders service, in the format 'type:address'")
+	fs.StringVar(&opts.ConsulAddr, "consul-address", "127.0.0.1:8500", "kv store and support watch")
 
 	// Add flags for logger and metrics
 	opts.Logger = logger.DefaultOptions()

@@ -1,0 +1,30 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: daprConfig
+spec:
+  #tracing:
+  # samplingRate: "1"
+  # zipkin:
+  # endpointAddress: "http://localhost:9411/api/v2/spans"
+  nameResolution:
+    component: "consul"
+    configuration:
+      client:
+        address: "${CONSUL_ADDRESS}"
+      selfRegister: false
+      useCache: true
+      queryOptions:
+        useCache: true
+      daprPortMetaKey: "DAPR_PORT"
+      advancedRegistration:
+        name: "${APP_ID}"
+        port: ${APP_PORT}
+        address: "${HOST_ADDRESS}"
+        #id: "${APP_ID}_${HOST_ADDRESS}_${APP_PORT}"
+        id: "${SERVICE_ID}"
+        meta:
+          DAPR_METRICS_PORT: "${DAPR_METRICS_PORT}"
+          DAPR_PROFILE_PORT: "${DAPR_PROFILE_PORT}"
+        tags:
+          ["${SERVICE_TAG}"]      

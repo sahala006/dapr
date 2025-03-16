@@ -462,8 +462,6 @@ github.com/dancannon/gorethink v4.0.0+incompatible h1:KFV7Gha3AuqT+gr0B/eKvGhbjm
 github.com/dancannon/gorethink v4.0.0+incompatible/go.mod h1:BLvkat9KmZc1efyYwhz3WnybhRZtgF1K929FD8z1avU=
 github.com/danieljoos/wincred v1.1.2 h1:QLdCxFs1/Yl4zduvBdcHB8goaYk9RARS2SgLLRuAyr0=
 github.com/danieljoos/wincred v1.1.2/go.mod h1:GijpziifJoIBfYh+S7BbkdUTU4LfM+QnGqR5Vl2tAx0=
-github.com/dapr/components-contrib v1.14.1-0.20241104052509-b969bbfe8867 h1:E7SK8yjXdIZfuAVbyliCfSJ5vLPZlmUDhO/za3sQOeE=
-github.com/dapr/components-contrib v1.14.1-0.20241104052509-b969bbfe8867/go.mod h1:egSwClldk7DPHSVMavg5QBfwhdTP2c55h4G99SE3VJQ=
 github.com/dapr/kit v0.13.1-0.20241127165251-30e2c24840b4 h1:8/ShPl4+AVF70mWcRWEAF/Hz6JDB0PEh6z3X0rJAyps=
 github.com/dapr/kit v0.13.1-0.20241127165251-30e2c24840b4/go.mod h1:HwFsBKEbcyLanWlDZE7u/jnaDCD/tU+n3pkFNUctQNw=
 github.com/dave/jennifer v1.4.0/go.mod h1:fIb+770HOpJ2fmN9EPPKOqm1vMGhB+TwXKMZhrIygKg=
@@ -1501,6 +1499,8 @@ github.com/sagikazarmark/locafero v0.4.0 h1:HApY1R9zGo4DBgr7dqsTH/JJxLTTsOt7u6ke
 github.com/sagikazarmark/locafero v0.4.0/go.mod h1:Pe1W6UlPYUk/+wc/6KFhbORCfqzgYEpgQ3O5fPuL3H4=
 github.com/sagikazarmark/slog-shim v0.1.0 h1:diDBnUNK9N/354PgrxMywXnAwEr1QZcOr6gto+ugjYE=
 github.com/sagikazarmark/slog-shim v0.1.0/go.mod h1:SrcSrq8aKtyuqEI1uvTDTK1arOWRIczQRv+GVI1AkeQ=
+github.com/sahala006/dapr-components-contrib v1.1.0 h1:vooVbNTtSNYkzwVR4pKiJKFkKofUfPX+WRaWrqwvgew=
+github.com/sahala006/dapr-components-contrib v1.1.0/go.mod h1:egSwClldk7DPHSVMavg5QBfwhdTP2c55h4G99SE3VJQ=
 github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da/go.mod h1:gi+0XIa01GRL2eRQVjQkKGqKF3SF9vZR/HnPullcV2E=
 github.com/santhosh-tekuri/jsonschema/v5 v5.0.0 h1:TToq11gyfNlrMFZiYujSekIsPd9AmsA2Bj/iv+s4JHE=
 github.com/santhosh-tekuri/jsonschema/v5 v5.0.0/go.mod h1:FKdcjfQW6rpZSnxxUvEA5H/cDPdvJ/SZJQLWWXWGrZ0=

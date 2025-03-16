@@ -14,10 +14,13 @@ limitations under the License.
 package messaging
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/dapr/dapr/pkg/route"
 	"io"
+	"math/rand"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -43,6 +46,7 @@ import (
 	"github.com/dapr/dapr/utils"
 	"github.com/dapr/kit/logger"
 	"github.com/dapr/kit/ttlcache"
+	consul_api "github.com/hashicorp/consul/api"
 )
 
 var log = logger.NewLogger("dapr.runtime.direct_messaging")
@@ -149,22 +153,38 @@ func (d *directMessaging) Close() error {
 	return nil
 }
 
+func MemDupReader(r io.Reader) func() io.Reader {
+	b := bytes.NewBuffer(nil)
+	t := io.TeeReader(r, b)
+
+	return func() io.Reader {
+		br := bytes.NewReader(b.Bytes())
+		return io.MultiReader(br, t)
+	}
+}
+
 // Invoke takes a message requests and invokes an app, either local or remote.
 func (d *directMessaging) Invoke(ctx context.Context, targetAppID string, req *invokev1.InvokeMethodRequest) (*invokev1.InvokeMethodResponse, error) {
-	app, err := d.getRemoteApp(targetAppID)
+	id, namespace, err := d.requestAppIDAndNamespace(targetAppID)
 	if err != nil {
 		return nil, err
 	}
 
+	app := remoteApp{
+		id:        id,
+		namespace: namespace,
+	}
+
 	// invoke external calls first if appID matches an httpEndpoint.Name or app.id == baseURL that is overwritten
 	if d.isHTTPEndpoint(app.id) || strings.HasPrefix(app.id, "http://") || strings.HasPrefix(app.id, "https://") {
+		app.address, err = d.getRemoteApp2(id, namespace, req)
 		return d.invokeWithRetry(ctx, retry.DefaultLinearRetryCount, retry.DefaultLinearBackoffInterval, app, d.invokeHTTPEndpoint, req)
 	}
 
 	if app.id == d.appID && app.namespace == d.namespace {
 		return d.invokeLocal(ctx, req)
 	}
-
+	app.address, err = d.getRemoteApp2(id, namespace, req)
 	return d.invokeWithRetry(ctx, retry.DefaultLinearRetryCount, retry.DefaultLinearBackoffInterval, app, d.invokeRemote, req)
 }
 
@@ -640,6 +660,43 @@ func (d *directMessaging) getRemoteApp(appID string) (res remoteApp, err error) 
 	}
 
 	return res, nil
+}
+
+func (d *directMessaging) getRemoteApp2(appID, namespace string, req *invokev1.InvokeMethodRequest) (address string, err error) {
+
+	if d.resolver == nil {
+		return "", errors.New("name resolver not initialized")
+	}
+
+	request := nr.ResolveRequest{
+		ID:        appID,
+		Namespace: namespace,
+		Port:      d.grpcPort,
+	}
+
+	result, err := d.resolver.ResolveName(context.TODO(), request)
+	if err != nil {
+		return "", err
+	}
+	sns, ok := result.([]*consul_api.ServiceEntry)
+	if !ok {
+		return "", errors.New("invalid response type")
+	}
+	entries, err := route.Routes.SelectEntries(appID, sns, req)
+	if err != nil {
+		return "", err
+	}
+
+	if len(entries) == 0 {
+		return "", errors.New("no service entries")
+	}
+	entry := entries[rand.Intn(len(entries))]
+	daprd_grpc_port, ok := entry.Service.Meta["DAPR_PORT"]
+	if !ok {
+		return "", errors.New("dapr port not found in service entry")
+	}
+	address = entry.Service.Address + ":" + daprd_grpc_port
+	return address, nil
 }
 
 // ReadChunk reads a chunk of data from a StreamPayload object.

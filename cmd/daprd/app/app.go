@@ -16,6 +16,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/dapr/dapr/pkg/route"
 	"os"
 
 	"go.uber.org/automaxprocs/maxprocs"
@@ -90,6 +91,8 @@ func Run() {
 
 	log.Infof("Starting Dapr Runtime -- version %s -- commit %s", buildinfo.Version(), buildinfo.Commit())
 	log.Infof("Log level set to: %s", opts.Logger.OutputLevel)
+
+	route.Init(opts.ConsulAddr)
 
 	secretstoresLoader.DefaultRegistry.Logger = logContrib
 	stateLoader.DefaultRegistry.Logger = logContrib

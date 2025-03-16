@@ -17,12 +17,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"io"
 	"net/http"
 	"strings"
-
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 
 	commonv1pb "github.com/dapr/dapr/pkg/proto/common/v1"
 	internalv1pb "github.com/dapr/dapr/pkg/proto/internals/v1"
@@ -37,7 +36,7 @@ const (
 // and provides the helpers to manage it.
 type InvokeMethodRequest struct {
 	replayableRequest
-
+	ch          chan io.Reader
 	r           *internalv1pb.InternalInvokeRequest
 	dataObject  any
 	dataTypeURL string
@@ -45,7 +44,9 @@ type InvokeMethodRequest struct {
 
 // NewInvokeMethodRequest creates InvokeMethodRequest object for method.
 func NewInvokeMethodRequest(method string) *InvokeMethodRequest {
-	return &InvokeMethodRequest{
+	ch := make(chan io.Reader, 1)
+	req := &InvokeMethodRequest{
+		ch: ch,
 		r: &internalv1pb.InternalInvokeRequest{
 			Ver: DefaultAPIVersion,
 			Message: &commonv1pb.InvokeRequest{
@@ -53,6 +54,7 @@ func NewInvokeMethodRequest(method string) *InvokeMethodRequest {
 			},
 		},
 	}
+	return req
 }
 
 // FromInvokeRequestMessage creates InvokeMethodRequest object from InvokeRequest pb object.
@@ -67,7 +69,10 @@ func FromInvokeRequestMessage(pb *commonv1pb.InvokeRequest) *InvokeMethodRequest
 
 // FromInternalInvokeRequest creates InvokeMethodRequest object from FromInternalInvokeRequest pb object.
 func FromInternalInvokeRequest(pb *internalv1pb.InternalInvokeRequest) (*InvokeMethodRequest, error) {
-	req := &InvokeMethodRequest{r: pb}
+	req := &InvokeMethodRequest{
+		r:  pb,
+		ch: make(chan io.Reader, 1),
+	}
 	if pb.GetMessage() == nil {
 		return nil, errors.New("field Message is nil")
 	}
@@ -284,17 +289,27 @@ func (imr *InvokeMethodRequest) ContentType() string {
 // RawData returns the stream body.
 // Note: this method is not safe for concurrent use.
 func (imr *InvokeMethodRequest) RawData() (r io.Reader) {
+	if len(imr.ch) != 0 {
+		reader := <-imr.ch
+		if reader != nil {
+			return reader
+		}
+	}
 	m := imr.r.GetMessage()
+
 	if m == nil {
+		imr.ch <- nil
 		return nil
 	}
 
 	// If the message has a data property, use that
 	if imr.HasMessageData() {
+		imr.ch <- bytes.NewReader(m.GetData().GetValue())
 		return bytes.NewReader(m.GetData().GetValue())
 	}
-
-	return imr.replayableRequest.RawData()
+	b, _ := io.ReadAll(imr.replayableRequest.RawData())
+	imr.ch <- bytes.NewReader(b)
+	return bytes.NewReader(b)
 }
 
 // RawDataFull returns the entire data read from the stream body.
