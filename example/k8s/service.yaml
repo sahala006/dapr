@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: oms-service
+spec:
+  selector:
+    app: svc1
+  clusterIP: "10.96.96.96"
+  type: NodePort
+  ports:
+    - name: web-port
+      port: 8100
+      targetPort: 8100
+      nodePort: 32011
+    - name: dapr-http-port
+      port: 3500
+      targetPort: 3500
+      nodePort: 32012

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc2-blue-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc2
+  template:
+    metadata:
+      annotations:
+        service.tag: blue  #这里标注灰度标签
+      labels:
+        app: svc2
+    spec:
+      imagePullSecrets:
+        - name: harbor-token
+      containers:
+        - name: svc2
+          image: 172.17.0.1:5100/devops/oms:v1

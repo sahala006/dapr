@@ -1,33 +1,33 @@
 
-(English|[简体中文](./README_zh.md))
+(简体中文|[English](./README.md))
+
+## 功能介绍
+基于github.com/dapr/dapr的`955436f45`来进行二次开发，实现了流量的按比例转发和按条件转发
 
 
-## Function Introduction
-Based on giitHub/dapp/dapp's `955436f45`, secondary development has been carried out to achieve proportional and conditional forwarding of traffic
-
-## preparation
+## 准备工作
 
 
-### 1. Deploy Services
-Deploy three services, one `SVC1` service and two `SVC2` services, and test them directly on the local machine. If you want to use the k8s deployment method, please refer to [k8s deploy](example/docs/k8s_deploy.md)。
-environmental requirements： python3.7
+### 1. 部署服务
+部署3个服务，一个svc1服务，两个svc2服务，这里直接在本机测试，如果想用k8s的部署方式请参考[k8s部署](example/docs/k8s部署.md)。
+环境要求： python3.7
 
 ```bash
 cd example/oms
 pip install -r requirements.txt
-python manage.py runserver 0.0.0.0:8100  # svc1
-python manage.py runserver 0.0.0.0:8200  # svc2
-python manage.py runserver 0.0.0.0:8300  # svc2
+python manage.py runserver 0.0.0.0:8100  # 启动svc1服务
+python manage.py runserver 0.0.0.0:8200  # 启动svc2服务
+python manage.py runserver 0.0.0.0:8300  # 启动svc2服务
 ```
 
-### 2. deploy consul
+### 2. 部署consul
 ```bash
 docker pull consul:1.13.1
 docker run -d -p 8500:8500 --restart=always --name=consul consul:1.13.1 agent -server -bootstrap -ui -node=1 -client='0.0.0.0' 
 ```
-Consul is used as a service registry and KV storage
+consul作为服务注册中心和kv存储来使用
 
-### 3. deploy dapr
+### 3. 部署dapr
 ```bash
 # svc1 dapr：
 go run  -tags=allcomponents cmd/daprd/main.go --app-id svc1 --app-port 8100 --app-protocol=http --dapr-http-port 3500 --dapr-grpc-port 3502 --metrics-port=9091 --config=example/config/.dapr/config.yaml
@@ -39,16 +39,17 @@ go run  -tags=allcomponents cmd/daprd/main.go --app-id svc2 --app-port 8200 --ap
 go run  -tags=allcomponents cmd/daprd/main.go --app-id svc2 --app-port 8300 --app-protocol=http --dapr-http-port 3700 --dapr-grpc-port 3702 --metrics-port=9093 --config=example/config/.dapr/config_blue.yaml 
 ```
 
-### Test
-#### 1. access the dapr-http-port of svc1：
+### 测试
+#### 1. 访问svc1的dapr-http-port：
 
 ```bash
 curl -H "username:sahala" --data "age=18" http://127.0.0.1:3500/v1.0/invoke/svc2/method/home?a=1
 ```
-At this time, the traffic will be forwarded to two `SVC2` services in a 1:1 ratio
+此时流量会100%转发到不带灰度标签的svc2服务。
 
-#### 2. Forward according to conditions
-Update traffic rule：
+#### 2. 按条件转发
+更新流量规则：
+
 ```python
 import requests
 headers = {
@@ -62,7 +63,7 @@ def update():
             "new": "blue",
         },
         "route_policy": {
-            "rate": 30,
+            "rate": 50,
             "rule_list": [{
                 "condition": "AND",
                 "rest_items": [
@@ -78,17 +79,18 @@ def update():
     }
     rsp = requests.put(url, headers=headers, data=json.dumps(data))
     if rsp.status_code == 200:
-        print("update key ssuccess")
+        print("更新key成功")
     else:
-        print(f"update failure:{rsp.status_code}")
+        print(f"更新失败:{rsp.status_code}")
 if __name__ == '__main__':
     update()
 ```
 
-At this point, only requests containing `env=prod` in the -- data will be forwarded to the `SVC2` service with grayscale labels, otherwise they will be forwarded to the `SVC2` service without labels
+此时只有`--data`部分里包含`env=prod`的请求才会转发到带有灰度标签(blue)的svc2服务，否则转发到不带灰度标签的svc2服务。
 
-#### 3. Forward proportionally
-Update traffic rule：
+
+#### 3. 按比例转发
+更新流量规则：
 ```python
 import requests
 headers = {
@@ -113,4 +115,5 @@ def update():
 if __name__ == '__main__':
     update()
 ```
-At this point, 30% of the traffic will be forwarded to the `SVC2` service with grayscale labels, and 70% of the traffic will be forwarded to the `SVC2` service without labels.
+此时30%流量会转发到带灰度标签的svc2服务，70%的流量转发到不带标签的的svc2服务。
+

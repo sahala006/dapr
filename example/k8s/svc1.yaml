@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc1-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc1
+  template:
+    metadata:
+      labels:
+        app: svc1
+    spec:
+      imagePullSecrets:
+        - name: harbor-token
+      containers:
+        - name: svc1
+          image: 172.17.0.1:5100/devops/oms:v1
